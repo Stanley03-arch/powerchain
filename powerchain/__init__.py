@@ -15,6 +15,7 @@ from powerchain.core.agents.planner import Planner
 from powerchain.core.agents.reflector import Reflector
 from powerchain.core.agents.advanced import PlanningAgent, ReflectiveAgent
 from powerchain.core.agents.reliable import ReliableAgent
+from powerchain.core.human import HumanInput
 from powerchain.core.memory.conversation import ConversationMemory
 from powerchain.core.memory.summary import SummaryMemory
 from powerchain.core.memory.vector import VectorMemory
@@ -50,7 +51,7 @@ from powerchain.multiagent.shared_memory import SharedMemory
 from powerchain.eval.evaluator import Evaluator, EvalResult
 from powerchain.eval.qa_eval import QAEvaluator
 
-__version__ = "0.14.0"
+__version__ = "0.15.0"
 
 __all__ = [
     # Core / Models
@@ -72,6 +73,7 @@ __all__ = [
     "PlanningAgent",
     "ReflectiveAgent",
     "ReliableAgent",
+    "HumanInput",
     "ConversationMemory",
     "SummaryMemory",
     "VectorMemory",

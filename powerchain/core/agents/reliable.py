@@ -1,27 +1,18 @@
 from __future__ import annotations
 
-import json
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from powerchain.core.agents.agent import Agent
 from powerchain.core.agents.planner import Planner
 from powerchain.core.agents.reflector import Reflector
-from powerchain.core.models.base import BaseChatModel, ChatMessage, Role
+from powerchain.core.human import HumanInput
+from powerchain.core.models.base import BaseChatModel
 from powerchain.core.tools.base import BaseTool
 from powerchain.core.memory.conversation import ConversationMemory
 
 
 class ReliableAgent:
-    """A significantly more robust agent designed to outperform typical LangChain agents
-    on complex tasks through:
-
-    - Explicit planning
-    - Step-by-step execution with state tracking
-    - Automatic replanning when steps fail
-    - Self-reflection + correction
-    - Better tool error recovery
-    - Optional strict validation
-    """
+    """Robust agent with planning, recovery, reflection, and optional human-in-the-loop."""
 
     def __init__(
         self,
@@ -32,6 +23,7 @@ class ReliableAgent:
         max_replans: int = 2,
         reflect: bool = True,
         verbose: bool = True,
+        human_in_the_loop: bool = False,
     ):
         self.llm = llm
         self.tools = {t.name: t for t in (tools or [])}
@@ -42,11 +34,13 @@ class ReliableAgent:
         self.max_replans = max_replans
         self.reflect = reflect
         self.verbose = verbose
+        self.human_in_the_loop = human_in_the_loop
+        self.human = HumanInput()
 
         self._base_agent = Agent(
             llm=llm,
             tools=tools or [],
-            memory=ConversationMemory(),  # isolated per step
+            memory=ConversationMemory(),
             max_iterations=5,
         )
 
@@ -55,7 +49,6 @@ class ReliableAgent:
             print(msg)
 
     def _execute_step(self, step: str, overall_task: str, previous_results: List[str]) -> str:
-        """Execute a single step with tool recovery."""
         context = "\n".join(previous_results) if previous_results else "None yet"
         prompt = (
             f"Overall task: {overall_task}\n\n"
@@ -72,25 +65,26 @@ class ReliableAgent:
     def _needs_replan(self, step_result: str) -> bool:
         lower = step_result.lower()
         failure_signals = [
-            "step_failed",
-            "i cannot",
-            "unable to",
-            "error",
-            "failed",
-            "don't know",
-            "do not know",
-            "insufficient",
+            "step_failed", "i cannot", "unable to", "error", "failed",
+            "don't know", "do not know", "insufficient",
         ]
         return any(sig in lower for sig in failure_signals)
 
     def run(self, task: str) -> str:
         self._log(f"\n{'='*60}\n[ReliableAgent] Starting task:\n{task}\n{'='*60}")
 
-        # 1. Initial plan
+        if self.human_in_the_loop:
+            if not self.human.confirm("Start this task?", default=True):
+                return "Task cancelled by human."
+
         plan = self.planner.plan(task)
         self._log(f"\n[Plan] {len(plan)} steps:")
         for i, s in enumerate(plan, 1):
             self._log(f"  {i}. {s}")
+
+        if self.human_in_the_loop:
+            if not self.human.confirm("Approve this plan?", default=True):
+                return "Plan rejected by human."
 
         results: List[str] = []
         replan_count = 0
@@ -100,14 +94,19 @@ class ReliableAgent:
             step = plan[step_idx]
             self._log(f"\n[Step {step_idx + 1}/{len(plan)}] {step}")
 
+            if self.human_in_the_loop:
+                if not self.human.confirm(f"Run step: {step}?", default=True):
+                    self._log("  Step skipped by human.")
+                    results.append(f"Step {step_idx + 1}: Skipped by human")
+                    step_idx += 1
+                    continue
+
             result = self._execute_step(step, task, results)
             self._log(f"  → {result[:200]}{'...' if len(result) > 200 else ''}")
 
             if self._needs_replan(result) and replan_count < self.max_replans:
                 replan_count += 1
                 self._log(f"\n[!] Step looks weak — replanning (attempt {replan_count})...")
-
-                # Replan remaining work
                 remaining_context = (
                     f"Original task: {task}\n\n"
                     f"Completed so far:\n" + "\n".join(results) + "\n\n"
@@ -119,12 +118,11 @@ class ReliableAgent:
                 self._log("[New plan]:")
                 for i, s in enumerate(new_plan, 1):
                     self._log(f"  {i}. {s}")
-                continue  # retry current index with new plan
+                continue
 
             results.append(f"Step {step_idx + 1}: {result}")
             step_idx += 1
 
-        # 2. Synthesize final answer
         synthesis_prompt = (
             f"Original task: {task}\n\n"
             f"Results collected:\n" + "\n\n".join(results) + "\n\n"
@@ -133,7 +131,6 @@ class ReliableAgent:
         )
         final = self._base_agent.run(synthesis_prompt)
 
-        # 3. Optional reflection + improvement
         if self.reflect:
             self._log("\n[Reflection] Critiquing final answer...")
             reflection = self.reflector.reflect(task, final)
@@ -142,6 +139,15 @@ class ReliableAgent:
             if any(w in reflection.lower() for w in ["weak", "missing", "incorrect", "improve", "incomplete", "error"]):
                 self._log("[Correction] Improving answer based on reflection...")
                 final = self.reflector.improve(task, final, reflection)
+
+        if self.human_in_the_loop:
+            print(f"\nProposed final answer:\n{final}\n")
+            if not self.human.confirm("Accept this final answer?", default=True):
+                feedback = self.human.ask("What should be improved?")
+                final = self._base_agent.run(
+                    f"Original task: {task}\n\nPrevious answer:\n{final}\n\n"
+                    f"Human feedback: {feedback}\n\nProvide an improved final answer."
+                )
 
         self.memory.add_user(task)
         self.memory.add_assistant(final)

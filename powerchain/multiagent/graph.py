@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Union
+
+from powerchain.core.human import HumanInput
 
 
 @dataclass
 class Node:
-    """A node in the execution graph."""
     name: str
     func: Callable[[Dict[str, Any]], Dict[str, Any]]
     description: str = ""
@@ -16,21 +17,19 @@ class Node:
 
 @dataclass
 class Edge:
-    """Directed edge with optional condition."""
     source: str
     target: str
-    condition: Optional[Callable[[Dict[str, Any]], bool]] = None  # None = always
+    condition: Optional[Callable[[Dict[str, Any]], bool]] = None
 
 
 class Graph:
-    """Powerful yet lightweight graph orchestration.
+    """Powerful yet lightweight graph orchestration with human-in-the-loop support.
 
     Features:
-    - Conditional edges
-    - Loops (with max iteration protection)
-    - Shared state dictionary
-    - Simple save / load of final state
-    - Clear execution trace when verbose=True
+    - Conditional edges & loops
+    - Shared state
+    - save/load state
+    - Human approval nodes / interrupt before selected nodes
     """
 
     def __init__(self, name: str = "PowerGraph", verbose: bool = False):
@@ -39,7 +38,9 @@ class Graph:
         self.nodes: Dict[str, Node] = {}
         self.edges: List[Edge] = []
         self.entry_point: Optional[str] = None
-        self._end_nodes: Set[str] = set()  # explicit terminal nodes (optional)
+        self._end_nodes: Set[str] = set()
+        self._interrupt_before: Set[str] = set()  # nodes that require human approval
+        self.human = HumanInput()
 
     def add_node(
         self,
@@ -65,16 +66,6 @@ class Graph:
         condition_map: Dict[str, str],
         condition_fn: Callable[[Dict[str, Any]], str],
     ) -> "Graph":
-        """Add multiple conditional edges from one source.
-
-        condition_fn should return a key that exists in condition_map.
-        Example:
-            graph.add_conditional_edges(
-                "check",
-                {"ok": "success", "fail": "retry"},
-                lambda s: "ok" if s.get("valid") else "fail"
-            )
-        """
         for key, target in condition_map.items():
             self.add_edge(
                 source,
@@ -90,8 +81,13 @@ class Graph:
         return self
 
     def set_finish_point(self, name: str) -> "Graph":
-        """Mark a node as an explicit terminal node."""
         self._end_nodes.add(name)
+        return self
+
+    def interrupt_before(self, *node_names: str) -> "Graph":
+        """Require human approval before these nodes run."""
+        for n in node_names:
+            self._interrupt_before.add(n)
         return self
 
     def _log(self, msg: str) -> None:
@@ -105,6 +101,12 @@ class Graph:
                 if edge.condition is None or edge.condition(state):
                     next_nodes.append(edge.target)
         return next_nodes
+
+    def _human_approve(self, node_name: str, state: Dict[str, Any]) -> bool:
+        self._log(f"\n[Human-in-the-loop] About to run node: '{node_name}'")
+        if self.verbose:
+            print("Current state keys:", list(state.keys()))
+        return self.human.confirm(f"Approve running '{node_name}'?", default=True)
 
     def run(
         self,
@@ -125,6 +127,14 @@ class Graph:
             if current not in self.nodes:
                 raise ValueError(f"Unknown node: {current}")
 
+            # Human-in-the-loop check
+            if current in self._interrupt_before:
+                approved = self._human_approve(current, state)
+                if not approved:
+                    self._log(f"  ✗ Human rejected node '{current}'. Stopping.")
+                    state["__human_rejected__"] = current
+                    break
+
             history.append(current)
             node = self.nodes[current]
             self._log(f"  → Executing node: {current}")
@@ -133,7 +143,6 @@ class Graph:
             if isinstance(result, dict):
                 state.update(result)
 
-            # Explicit finish point
             if current in self._end_nodes:
                 self._log(f"  ✓ Reached finish point: {current}")
                 break
@@ -144,7 +153,6 @@ class Graph:
                 self._log(f"  ✓ No outgoing edges — stopping at '{current}'")
                 break
 
-            # Take first matching edge (can be extended later for fan-out)
             current = next_nodes[0]
             steps += 1
 
@@ -156,15 +164,12 @@ class Graph:
         return state
 
     def save_state(self, state: Dict[str, Any], path: Union[str, Path]) -> None:
-        """Save graph state to a JSON file."""
         path = Path(path)
-        # Remove non-serializable items if any
         serializable = {k: v for k, v in state.items() if not callable(v)}
         path.write_text(json.dumps(serializable, indent=2, default=str))
 
     @staticmethod
     def load_state(path: Union[str, Path]) -> Dict[str, Any]:
-        """Load previously saved state."""
         return json.loads(Path(path).read_text())
 
     def __repr__(self) -> str:

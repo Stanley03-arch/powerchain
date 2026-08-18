@@ -2,39 +2,35 @@
 
 **A cleaner, more powerful alternative to LangChain.**
 
-> Status: **v0.14** — Stronger Graph with loops, conditionals & state persistence.
+> Status: **v0.15** — Human-in-the-loop support.
 
-## Graph (v0.14)
+## Human-in-the-loop (v0.15)
 
+### Graph
 ```python
-from powerchain.multiagent import Graph
-
-graph = Graph(name="MyWorkflow", verbose=True)
-graph.add_node("plan", plan_fn)
-graph.add_node("execute", execute_fn)
-graph.add_node("finish", finish_fn)
-
-graph.set_entry_point("plan")
-graph.add_edge("plan", "execute")
-
-# Conditional branching + loops
-graph.add_conditional_edges(
-    "execute",
-    {"retry": "execute", "done": "finish"},
-    lambda s: "done" if s.get("success") else "retry"
-)
-
+graph.interrupt_before("execute", "deploy")  # require approval before these nodes
 result = graph.run({"task": "..."})
-graph.save_state(result, "state.json")
 ```
 
-## Highlights vs earlier versions
+### ReliableAgent
+```python
+agent = ReliableAgent(llm=llm, human_in_the_loop=True)
+# Will ask for approval of: task start, plan, each step, and final answer
+answer = agent.run("...")
+```
 
-| Version | Key addition |
-|---------|--------------|
-| v0.12 | ReliableAgent (plan → replan → reflect → correct) |
-| v0.13 | Multi-Agent shared memory + parallel/coordinated modes |
-| v0.14 | Graph with loops, conditional edges, state save/load |
+Custom UIs can pass their own callback via `HumanInput(callback=...)`.
+
+## Feature Highlights
+
+| Area | PowerChain capability |
+|------|-----------------------|
+| **Reliable Agents** | Plan → Execute → Replan → Reflect → Correct + HITL |
+| **Multi-Agent** | Shared memory, parallel, coordinated modes |
+| **Graph** | Loops, conditionals, persistence, human interrupts |
+| **RAG** | FAISS, Chroma, InMemory + loaders |
+| **Models** | OpenAI, Anthropic, Groq, Ollama |
+| **DX** | Clean, explicit, easy to extend |
 
 ## Install
 
