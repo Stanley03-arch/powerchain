@@ -44,12 +44,13 @@ from powerchain.rag.chain import RAGChain
 from powerchain.multiagent.agent_node import AgentNode
 from powerchain.multiagent.crew import Crew
 from powerchain.multiagent.graph import Graph, Node, Edge
+from powerchain.multiagent.shared_memory import SharedMemory
 
 # Eval
 from powerchain.eval.evaluator import Evaluator, EvalResult
 from powerchain.eval.qa_eval import QAEvaluator
 
-__version__ = "0.12.0"
+__version__ = "0.13.0"
 
 __all__ = [
     # Core / Models
@@ -101,6 +102,7 @@ __all__ = [
     "Graph",
     "Node",
     "Edge",
+    "SharedMemory",
     # Eval
     "Evaluator",
     "EvalResult",

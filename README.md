@@ -2,42 +2,44 @@
 
 **A cleaner, more powerful alternative to LangChain.**
 
-> Status: **v0.12** — ReliableAgent with planning, recovery & self-correction.
+> Status: **v0.13** — Upgraded Multi-Agent with shared memory & parallel execution.
 
-## ReliableAgent (New in v0.12)
-
-Designed to be more robust than typical LangChain agents:
-
-- Explicit multi-step planning
-- Step-by-step execution with state
-- Automatic **replanning** when a step fails
-- Self-reflection + answer correction
-- Better tool error recovery
-- Verbose mode for full transparency
+## Multi-Agent (v0.13)
 
 ```python
-from powerchain import ChatOpenAI, tool, ReliableAgent
+from powerchain import ChatOpenAI
+from powerchain.multiagent import AgentNode, Crew, SharedMemory
 
-@tool
-def calculate(expression: str) -> str:
-    return str(eval(expression))
+llm = ChatOpenAI()
+crew = Crew(
+    agents=[
+        AgentNode("Researcher", llm, role="Researcher", goal="Find facts"),
+        AgentNode("Writer", llm, role="Writer", goal="Write clearly"),
+        AgentNode("Critic", llm, role="Critic", goal="Improve quality"),
+    ],
+    shared_memory=SharedMemory(),
+)
 
-agent = ReliableAgent(llm=ChatOpenAI(), tools=[calculate], reflect=True)
-print(agent.run("Complex multi-step task here..."))
+# Four execution modes:
+crew.run_sequential(task)
+crew.run_round_robin(task, rounds=2)
+crew.run_parallel(task)          # concurrent
+crew.run_coordinated(task)       # shared memory heavy
 ```
 
-## Feature Overview
+## ReliableAgent (v0.12)
 
-| Area | Capabilities |
-|------|--------------|
-| **Reliable Agents** | `ReliableAgent` (plan → execute → replan → reflect → correct) |
-| **Other Agents** | Agent, PlanningAgent, ReflectiveAgent |
-| **Models** | OpenAI, Anthropic, Groq, Ollama + Retry/Fallback |
-| **Memory** | Conversation, Summary, Vector |
-| **RAG** | FAISS, Chroma, InMemory + loaders |
-| **Multi-Agent** | Crew + Graph |
-| **Output Parsing** | Pydantic, JSON, List |
-| **CLI + Tests** | Yes |
+Plan → Execute → Replan on failure → Reflect → Correct
+
+## Full Feature Set
+
+- ReliableAgent, PlanningAgent, ReflectiveAgent
+- Multi-Agent Crew (sequential / round-robin / parallel / coordinated)
+- SharedMemory across agents
+- Graph orchestration
+- RAG (FAISS, Chroma, InMemory)
+- Multiple LLM providers
+- Output parsers, Evaluation, CLI, Tests
 
 ## Install
 
