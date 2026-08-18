@@ -2,44 +2,39 @@
 
 **A cleaner, more powerful alternative to LangChain.**
 
-> Status: **v0.13** — Upgraded Multi-Agent with shared memory & parallel execution.
+> Status: **v0.14** — Stronger Graph with loops, conditionals & state persistence.
 
-## Multi-Agent (v0.13)
+## Graph (v0.14)
 
 ```python
-from powerchain import ChatOpenAI
-from powerchain.multiagent import AgentNode, Crew, SharedMemory
+from powerchain.multiagent import Graph
 
-llm = ChatOpenAI()
-crew = Crew(
-    agents=[
-        AgentNode("Researcher", llm, role="Researcher", goal="Find facts"),
-        AgentNode("Writer", llm, role="Writer", goal="Write clearly"),
-        AgentNode("Critic", llm, role="Critic", goal="Improve quality"),
-    ],
-    shared_memory=SharedMemory(),
+graph = Graph(name="MyWorkflow", verbose=True)
+graph.add_node("plan", plan_fn)
+graph.add_node("execute", execute_fn)
+graph.add_node("finish", finish_fn)
+
+graph.set_entry_point("plan")
+graph.add_edge("plan", "execute")
+
+# Conditional branching + loops
+graph.add_conditional_edges(
+    "execute",
+    {"retry": "execute", "done": "finish"},
+    lambda s: "done" if s.get("success") else "retry"
 )
 
-# Four execution modes:
-crew.run_sequential(task)
-crew.run_round_robin(task, rounds=2)
-crew.run_parallel(task)          # concurrent
-crew.run_coordinated(task)       # shared memory heavy
+result = graph.run({"task": "..."})
+graph.save_state(result, "state.json")
 ```
 
-## ReliableAgent (v0.12)
+## Highlights vs earlier versions
 
-Plan → Execute → Replan on failure → Reflect → Correct
-
-## Full Feature Set
-
-- ReliableAgent, PlanningAgent, ReflectiveAgent
-- Multi-Agent Crew (sequential / round-robin / parallel / coordinated)
-- SharedMemory across agents
-- Graph orchestration
-- RAG (FAISS, Chroma, InMemory)
-- Multiple LLM providers
-- Output parsers, Evaluation, CLI, Tests
+| Version | Key addition |
+|---------|--------------|
+| v0.12 | ReliableAgent (plan → replan → reflect → correct) |
+| v0.13 | Multi-Agent shared memory + parallel/coordinated modes |
+| v0.14 | Graph with loops, conditional edges, state save/load |
 
 ## Install
 

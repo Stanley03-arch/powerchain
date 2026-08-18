@@ -50,7 +50,7 @@ from powerchain.multiagent.shared_memory import SharedMemory
 from powerchain.eval.evaluator import Evaluator, EvalResult
 from powerchain.eval.qa_eval import QAEvaluator
 
-__version__ = "0.13.0"
+__version__ = "0.14.0"
 
 __all__ = [
     # Core / Models
