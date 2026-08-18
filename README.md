@@ -2,71 +2,40 @@
 
 **A cleaner, more powerful alternative to LangChain.**
 
-> Status: **v0.5** — Core + RAG + Multi-Agent + Advanced Memory + Reliability.
+> Status: **v0.6** — Core + RAG + Multi-Agent + Memory + Reliability + Loaders + Evaluation.
 
 ## Feature Overview
 
-| Version | What was added |
-|---------|----------------|
-| **v0.1** | LLM interface, Tools, Agent, ConversationMemory, Runnables, Tracing |
+| Version | Highlights |
+|---------|------------|
+| **v0.1** | LLM, Tools, Agent, Memory, Runnables, Tracing |
 | **v0.2** | Full RAG pipeline |
-| **v0.3** | Multi-agent (`Crew`) + `Graph` orchestration |
-| **v0.4** | `SummaryMemory` + `VectorMemory` |
-| **v0.5** | **RetryChatModel**, **FallbackChatModel**, proper streaming |
+| **v0.3** | Multi-agent Crew + Graph orchestration |
+| **v0.4** | SummaryMemory + VectorMemory |
+| **v0.5** | Retry, Fallback, real streaming |
+| **v0.6** | **WebLoader, DirectoryLoader, QAEvaluator** |
 
-## Reliability Features (v0.5)
+## New in v0.6
 
+### More Loaders
 ```python
-from powerchain import ChatOpenAI, RetryChatModel, FallbackChatModel
+from powerchain import WebLoader, DirectoryLoader, TextLoader
 
-# Automatic retries with exponential backoff
-reliable = RetryChatModel(ChatOpenAI(), max_attempts=3)
-
-# Primary + backup models
-fallback = FallbackChatModel([
-    ChatOpenAI(model="gpt-4o"),
-    ChatOpenAI(model="gpt-4o-mini"),  # cheaper backup
-])
-
-# Real token streaming
-for chunk in ChatOpenAI().stream(messages):
-    print(chunk, end="", flush=True)
+docs = WebLoader("https://example.com").load()
+docs = DirectoryLoader("./my_docs", glob="**/*.txt").load()
 ```
 
-## Quick Examples
-
-### Agent + Tools
+### Evaluation Harness
 ```python
-from powerchain import ChatOpenAI, tool, Agent
+from powerchain import ChatOpenAI, QAEvaluator
 
-@tool
-def get_weather(city: str) -> str:
-    return f"Sunny in {city}"
-
-agent = Agent(llm=ChatOpenAI(), tools=[get_weather])
-print(agent.run("Weather in Nairobi?"))
-```
-
-### Multi-Agent
-```python
-from powerchain import ChatOpenAI
-from powerchain.multiagent import AgentNode, Crew
-
-crew = Crew(agents=[
-    AgentNode("Researcher", ChatOpenAI(), role="Researcher", goal="Find facts"),
-    AgentNode("Writer", ChatOpenAI(), role="Writer", goal="Write clearly"),
-])
-print(crew.run_sequential("Explain PowerChain"))
-```
-
-### RAG
-```python
-from powerchain import ChatOpenAI, Document, OpenAIEmbeddings, InMemoryVectorStore, RAGChain
-
-store = InMemoryVectorStore(embedding=OpenAIEmbeddings())
-store.add_documents([Document(page_content="PowerChain is a modern LLM framework.")])
-rag = RAGChain(llm=ChatOpenAI(), retriever=store.as_retriever())
-print(rag.invoke("What is PowerChain?"))
+evaluator = QAEvaluator(llm=ChatOpenAI())
+result = evaluator.evaluate(
+    input="What is PowerChain?",
+    prediction="A modern LLM framework",
+    reference="A cleaner alternative to LangChain"
+)
+print(result.score, result.passed)
 ```
 
 ## Install
@@ -84,10 +53,10 @@ export OPENAI_API_KEY=sk-...
 - [x] RAG
 - [x] Multi-agent + Graph
 - [x] Advanced Memory
-- [x] Reliability (retries, fallbacks, streaming)
-- [ ] More document loaders & vector store backends
-- [ ] Evaluation harness
-- [ ] Additional LLM providers
+- [x] Reliability
+- [x] More loaders + Evaluation
+- [ ] Additional LLM providers (Anthropic, Groq, Ollama…)
+- [ ] More vector store backends
 
 ## License
 

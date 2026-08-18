@@ -17,6 +17,8 @@ from powerchain.core.runnables.base import Runnable, Sequential, Parallel
 # RAG
 from powerchain.rag.documents import Document
 from powerchain.rag.loaders.text import TextLoader
+from powerchain.rag.loaders.web import WebLoader
+from powerchain.rag.loaders.directory import DirectoryLoader
 from powerchain.rag.splitters.recursive import RecursiveCharacterTextSplitter
 from powerchain.rag.embeddings.openai import OpenAIEmbeddings
 from powerchain.rag.vectorstores.memory import InMemoryVectorStore
@@ -28,7 +30,11 @@ from powerchain.multiagent.agent_node import AgentNode
 from powerchain.multiagent.crew import Crew
 from powerchain.multiagent.graph import Graph, Node, Edge
 
-__version__ = "0.5.0"
+# Eval
+from powerchain.eval.evaluator import Evaluator, EvalResult
+from powerchain.eval.qa_eval import QAEvaluator
+
+__version__ = "0.6.0"
 
 __all__ = [
     # Core
@@ -52,6 +58,8 @@ __all__ = [
     # RAG
     "Document",
     "TextLoader",
+    "WebLoader",
+    "DirectoryLoader",
     "RecursiveCharacterTextSplitter",
     "OpenAIEmbeddings",
     "InMemoryVectorStore",
@@ -63,4 +71,8 @@ __all__ = [
     "Graph",
     "Node",
     "Edge",
+    # Eval
+    "Evaluator",
+    "EvalResult",
+    "QAEvaluator",
 ]
