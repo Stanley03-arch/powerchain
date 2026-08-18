@@ -25,6 +25,8 @@ from powerchain.rag.loaders.directory import DirectoryLoader
 from powerchain.rag.splitters.recursive import RecursiveCharacterTextSplitter
 from powerchain.rag.embeddings.openai import OpenAIEmbeddings
 from powerchain.rag.vectorstores.memory import InMemoryVectorStore
+from powerchain.rag.vectorstores.faiss_store import FAISSVectorStore
+from powerchain.rag.vectorstores.chroma_store import ChromaVectorStore
 from powerchain.rag.retrievers.vector import VectorStoreRetriever
 from powerchain.rag.chain import RAGChain
 
@@ -37,7 +39,7 @@ from powerchain.multiagent.graph import Graph, Node, Edge
 from powerchain.eval.evaluator import Evaluator, EvalResult
 from powerchain.eval.qa_eval import QAEvaluator
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 __all__ = [
     # Core / Models
@@ -69,6 +71,8 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "OpenAIEmbeddings",
     "InMemoryVectorStore",
+    "FAISSVectorStore",
+    "ChromaVectorStore",
     "VectorStoreRetriever",
     "RAGChain",
     # Multi-agent

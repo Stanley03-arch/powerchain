@@ -2,77 +2,51 @@
 
 **A cleaner, more powerful alternative to LangChain.**
 
-> Status: **v0.7** — Full-featured foundation with multiple LLM providers.
+> Status: **v0.8** — Production-ready foundation with multiple vector stores & LLM providers.
 
-## Supported LLM Providers
+## Vector Stores
 
-| Provider | Class | Notes |
-|----------|------|-------|
-| OpenAI / compatible | `ChatOpenAI` | Also works with Azure, Together, Fireworks, etc. |
-| Anthropic | `ChatAnthropic` | Claude models |
-| Groq | `ChatGroq` | Extremely fast inference |
-| Ollama | `ChatOllama` | Local models |
+| Store | Class | Persistence | Install |
+|-------|------|-------------|--------|
+| In-Memory | `InMemoryVectorStore` | No | Built-in |
+| FAISS | `FAISSVectorStore` | Yes (`save_local` / `load_local`) | `pip install faiss-cpu` |
+| Chroma | `ChromaVectorStore` | Yes | `pip install chromadb` |
 
 ```python
-from powerchain import ChatOpenAI, ChatAnthropic, ChatGroq, ChatOllama
+from powerchain import OpenAIEmbeddings, FAISSVectorStore, ChromaVectorStore
 
-openai_llm = ChatOpenAI(model="gpt-4o-mini")
-claude = ChatAnthropic(model="claude-3-5-sonnet-20241022")
-groq = ChatGroq(model="llama-3.3-70b-versatile")
-local = ChatOllama(model="llama3.2")
+embeddings = OpenAIEmbeddings()
+
+# FAISS
+faiss_store = FAISSVectorStore(embedding=embeddings)
+faiss_store.add_documents(docs)
+faiss_store.save_local("./my_index")
+
+# Chroma
+chroma_store = ChromaVectorStore(embedding=embeddings, persist_directory="./chroma_db")
 ```
 
-## Feature Overview
+## LLM Providers
 
-| Version | Highlights |
-|---------|------------|
-| **v0.1** | Core (LLM, Tools, Agent, Memory, Runnables) |
-| **v0.2** | RAG pipeline |
-| **v0.3** | Multi-agent Crew + Graph |
-| **v0.4** | SummaryMemory + VectorMemory |
-| **v0.5** | Retry, Fallback, Streaming |
-| **v0.6** | WebLoader, DirectoryLoader, Evaluation |
-| **v0.7** | **Anthropic, Groq, Ollama providers** |
+`ChatOpenAI` · `ChatAnthropic` · `ChatGroq` · `ChatOllama`
+
+## Full Feature Set
+
+- Agents + Tools + Memory (Conversation / Summary / Vector)
+- RAG (Loaders, Splitters, Embeddings, Vector Stores, RAGChain)
+- Multi-Agent Crews + Graph orchestration
+- Retry + Fallback models
+- Streaming
+- Evaluation harness
+- Multiple LLM providers & vector backends
 
 ## Install
 
 ```bash
 git clone https://github.com/Stanley03-arch/powerchain.git
 cd powerchain
-pip install -e ".[all]"          # OpenAI + Anthropic
-# or selectively:
-pip install -e ".[openai]"
-pip install anthropic            # for ChatAnthropic
+pip install -e ".[all]"
 ```
-
-## Quick Examples
-
-### Agent
-```python
-from powerchain import ChatOpenAI, tool, Agent
-
-@tool
-def get_weather(city: str) -> str:
-    return f"Sunny in {city}"
-
-agent = Agent(llm=ChatOpenAI(), tools=[get_weather])
-print(agent.run("Weather in Nairobi?"))
-```
-
-### Multi-Agent + RAG + Eval all available
-See the `examples/` folder.
-
-## Roadmap
-
-- [x] Core
-- [x] RAG
-- [x] Multi-agent + Graph
-- [x] Advanced Memory
-- [x] Reliability
-- [x] Loaders + Evaluation
-- [x] Multiple LLM providers
-- [ ] More vector store backends (Chroma, FAISS, etc.)
-- [ ] Deeper agent improvements (planning, reflection)
 
 ## License
 
