@@ -2,9 +2,9 @@
 
 **A cleaner, more powerful alternative to LangChain.**
 
-PowerChain is designed from the ground up to fix the main pain points of LangChain while delivering stronger agent capabilities, better composition, first-class streaming, and excellent observability.
+PowerChain is designed from the ground up to fix the main pain points of LangChain while delivering stronger agent capabilities, better composition, first-class streaming readiness, and excellent observability.
 
-> Status: **v0.1 Core** — solid foundation ready for rapid expansion.
+> Status: **v0.2** — Core + RAG foundation complete.
 
 ## Why PowerChain?
 
@@ -17,23 +17,37 @@ PowerChain is designed from the ground up to fix the main pain points of LangCha
 | Observability     | Bolted on                         | Built-in tracing & callbacks                 |
 | Typing            | Inconsistent                      | Strong Pydantic + modern type hints          |
 | Streaming         | Uneven support                    | First-class everywhere                       |
+| RAG               | Complex setup                     | Clean, modular, easy to extend               |
 
-## Features in v0.1
+## Features
 
+### v0.1 — Core
 - Unified LLM / ChatModel interface (streaming + tool calling ready)
-- Strong typed Tool system
-- Modern Agent loop with hooks for planning & reflection
-- Composition primitives (`Runnable`, `Sequential`, `Parallel`)
-- Conversation + summary memory
+- Strong typed Tool system + `@tool` decorator
+- Modern Agent loop
+- Conversation Memory
 - Prompt templates
-- Built-in tracing hooks
-- Clean package structure ready for RAG, multi-agent, and integrations
+- Runnable composition (`|` style)
+- Tracing / callback hooks
+
+### v0.2 — RAG (just added)
+- `Document` model
+- Text loaders
+- Recursive character text splitter
+- Embeddings interface + OpenAI embeddings
+- In-memory vector store (cosine similarity)
+- Vector store retriever
+- Simple + effective `RAGChain`
 
 ## Quick Start
 
 ```bash
-pip install -e .
+git clone https://github.com/Stanley03-arch/powerchain.git
+cd powerchain
+pip install -e ".[openai]"
 ```
+
+### Agent example
 
 ```python
 from powerchain import ChatOpenAI, tool, Agent, ConversationMemory
@@ -43,11 +57,30 @@ def get_weather(city: str) -> str:
     """Get current weather for a city."""
     return f"Sunny and 24°C in {city}"
 
-llm = ChatOpenAI(model="gpt-4o-mini")  # or any compatible model
+llm = ChatOpenAI(model="gpt-4o-mini")
 agent = Agent(llm=llm, tools=[get_weather], memory=ConversationMemory())
 
-response = agent.run("What's the weather in Nairobi?")
-print(response)
+print(agent.run("What's the weather in Nairobi?"))
+```
+
+### RAG example
+
+```python
+from powerchain import (
+    ChatOpenAI, Document, RecursiveCharacterTextSplitter,
+    OpenAIEmbeddings, InMemoryVectorStore, RAGChain
+)
+
+docs = [Document(page_content="PowerChain is a modern LLM framework...")]
+splitter = RecursiveCharacterTextSplitter(chunk_size=500)
+chunks = splitter.split_documents(docs)
+
+embeddings = OpenAIEmbeddings()
+store = InMemoryVectorStore(embedding=embeddings)
+store.add_documents(chunks)
+
+rag = RAGChain(llm=ChatOpenAI(), retriever=store.as_retriever())
+print(rag.invoke("What is PowerChain?"))
 ```
 
 ## Project Structure
@@ -55,41 +88,34 @@ print(response)
 ```
 powerchain/
 ├── core/
-│   ├── models/          # LLM interfaces
-│   ├── prompts/         # Prompt templates
-│   ├── tools/           # Tool system
-│   ├── agents/          # Agent runtime
-│   ├── memory/          # Memory systems
-│   ├── runnables/       # Composition
-│   └── tracing/         # Observability
-├── rag/                 # (coming soon)
-├── integrations/        # (coming soon)
-└── eval/                 # (coming soon)
+│   ├── models/
+│   ├── prompts/
+│   ├── tools/
+│   ├── agents/
+│   ├── memory/
+│   ├── runnables/
+│   └── tracing/
+├── rag/
+│   ├── documents.py
+│   ├── loaders/
+│   ├── splitters/
+│   ├── embeddings/
+│   ├── vectorstores/
+│   ├── retrievers/
+│   └── chain.py
+└── ...
 ```
 
 ## Roadmap
 
-### v0.2 — RAG & Retrieval
-- Document loaders & splitters
-- Vector store interface
-- Hybrid retrievers
-- Agentic RAG patterns
-
-### v0.3 — Multi-Agent & Graphs
-- Native multi-agent orchestration
-- Graph-based workflows (LangGraph-style but cleaner)
-- Human-in-the-loop
-
-### v0.4+ — Production Power
-- More LLM providers
-- Advanced memory (vector + hierarchical)
-- Evaluation harness
-- Better streaming & parallelism
-- Guardrails & reliability features
-
-## Contributing
-
-This is early-stage. Issues, ideas, and PRs are very welcome.
+- [x] Core (models, tools, agents, memory, composition)
+- [x] RAG foundation
+- [ ] Multi-agent & graph orchestration
+- [ ] Better memory (summary + vector memory)
+- [ ] More loaders & vector store backends
+- [ ] Streaming polish & reliability (retries, fallbacks)
+- [ ] Evaluation harness
+- [ ] More LLM providers
 
 ## License
 
