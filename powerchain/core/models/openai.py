@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import os
-from typing import Any, List, Optional
+from typing import Any, AsyncIterator, Iterator, List, Optional
 
 from powerchain.core.models.base import BaseChatModel, ChatMessage, Role
 
 
 class ChatOpenAI(BaseChatModel):
-    """OpenAI-compatible chat model.
+    """OpenAI-compatible chat model with proper streaming support.
 
-    Works with OpenAI, Azure OpenAI, and any OpenAI-compatible endpoint
-    (Groq, Together, Fireworks, local vLLM, etc.).
+    Works with OpenAI, Azure OpenAI, Groq, Together, Fireworks, local vLLM, etc.
     """
 
     def __init__(
@@ -46,16 +45,18 @@ class ChatOpenAI(BaseChatModel):
     def _prepare_messages(self, messages: List[ChatMessage]) -> list[dict]:
         return [m.to_dict() for m in messages]
 
-    def invoke(
+    def _build_params(
         self,
         messages: List[ChatMessage],
         tools: Optional[List[dict]] = None,
+        stream: bool = False,
         **kwargs: Any,
-    ) -> ChatMessage:
+    ) -> dict:
         params: dict[str, Any] = {
             "model": self.model_name,
             "messages": self._prepare_messages(messages),
             "temperature": self.temperature,
+            "stream": stream,
             **self.extra,
             **kwargs,
         }
@@ -63,7 +64,15 @@ class ChatOpenAI(BaseChatModel):
             params["max_tokens"] = self.max_tokens
         if tools:
             params["tools"] = tools
+        return params
 
+    def invoke(
+        self,
+        messages: List[ChatMessage],
+        tools: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> ChatMessage:
+        params = self._build_params(messages, tools=tools, stream=False, **kwargs)
         response = self._client.chat.completions.create(**params)
         choice = response.choices[0].message
 
@@ -93,18 +102,7 @@ class ChatOpenAI(BaseChatModel):
         tools: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> ChatMessage:
-        params: dict[str, Any] = {
-            "model": self.model_name,
-            "messages": self._prepare_messages(messages),
-            "temperature": self.temperature,
-            **self.extra,
-            **kwargs,
-        }
-        if self.max_tokens is not None:
-            params["max_tokens"] = self.max_tokens
-        if tools:
-            params["tools"] = tools
-
+        params = self._build_params(messages, tools=tools, stream=False, **kwargs)
         response = await self._async_client.chat.completions.create(**params)
         choice = response.choices[0].message
 
@@ -127,3 +125,31 @@ class ChatOpenAI(BaseChatModel):
             content=choice.content or "",
             tool_calls=tool_calls,
         )
+
+    def stream(
+        self,
+        messages: List[ChatMessage],
+        tools: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> Iterator[str]:
+        params = self._build_params(messages, tools=tools, stream=True, **kwargs)
+        stream = self._client.chat.completions.create(**params)
+
+        for chunk in stream:
+            delta = chunk.choices[0].delta
+            if delta.content:
+                yield delta.content
+
+    async def astream(
+        self,
+        messages: List[ChatMessage],
+        tools: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[str]:
+        params = self._build_params(messages, tools=tools, stream=True, **kwargs)
+        stream = await self._async_client.chat.completions.create(**params)
+
+        async for chunk in stream:
+            delta = chunk.choices[0].delta
+            if delta.content:
+                yield delta.content

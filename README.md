@@ -2,39 +2,40 @@
 
 **A cleaner, more powerful alternative to LangChain.**
 
-PowerChain is designed from the ground up to fix the main pain points of LangChain while delivering stronger agent capabilities, better composition, and excellent observability.
+> Status: **v0.5** — Core + RAG + Multi-Agent + Advanced Memory + Reliability.
 
-> Status: **v0.4** — Core + RAG + Multi-Agent + Advanced Memory.
+## Feature Overview
 
-## Features at a glance
+| Version | What was added |
+|---------|----------------|
+| **v0.1** | LLM interface, Tools, Agent, ConversationMemory, Runnables, Tracing |
+| **v0.2** | Full RAG pipeline |
+| **v0.3** | Multi-agent (`Crew`) + `Graph` orchestration |
+| **v0.4** | `SummaryMemory` + `VectorMemory` |
+| **v0.5** | **RetryChatModel**, **FallbackChatModel**, proper streaming |
 
-| Version | Capabilities |
-|---------|--------------|
-| **v0.1** | LLM interface, Tools, Agent, ConversationMemory, PromptTemplate, Runnable composition, Tracing |
-| **v0.2** | Full RAG pipeline (Documents, Splitters, Embeddings, VectorStore, RAGChain) |
-| **v0.3** | Multi-agent (`AgentNode`, `Crew`) + lightweight `Graph` orchestration |
-| **v0.4** | **SummaryMemory** + **VectorMemory** (just added) |
-
-## Memory Systems
+## Reliability Features (v0.5)
 
 ```python
-from powerchain import ChatOpenAI, Agent, OpenAIEmbeddings
-from powerchain.core.memory import SummaryMemory, VectorMemory
+from powerchain import ChatOpenAI, RetryChatModel, FallbackChatModel
 
-llm = ChatOpenAI()
+# Automatic retries with exponential backoff
+reliable = RetryChatModel(ChatOpenAI(), max_attempts=3)
 
-# 1. Summary Memory — automatically summarizes old turns
-summary_mem = SummaryMemory(llm=llm, max_messages=10)
+# Primary + backup models
+fallback = FallbackChatModel([
+    ChatOpenAI(model="gpt-4o"),
+    ChatOpenAI(model="gpt-4o-mini"),  # cheaper backup
+])
 
-# 2. Vector Memory — recent buffer + long-term semantic retrieval
-vector_mem = VectorMemory(embedding=OpenAIEmbeddings(), max_recent=6, k_long_term=4)
-
-agent = Agent(llm=llm, memory=summary_mem)  # or vector_mem
+# Real token streaming
+for chunk in ChatOpenAI().stream(messages):
+    print(chunk, end="", flush=True)
 ```
 
 ## Quick Examples
 
-### Single Agent
+### Agent + Tools
 ```python
 from powerchain import ChatOpenAI, tool, Agent
 
@@ -46,15 +47,14 @@ agent = Agent(llm=ChatOpenAI(), tools=[get_weather])
 print(agent.run("Weather in Nairobi?"))
 ```
 
-### Multi-Agent Crew
+### Multi-Agent
 ```python
 from powerchain import ChatOpenAI
 from powerchain.multiagent import AgentNode, Crew
 
-llm = ChatOpenAI()
 crew = Crew(agents=[
-    AgentNode("Researcher", llm, role="Researcher", goal="Find facts"),
-    AgentNode("Writer", llm, role="Writer", goal="Write clearly"),
+    AgentNode("Researcher", ChatOpenAI(), role="Researcher", goal="Find facts"),
+    AgentNode("Writer", ChatOpenAI(), role="Writer", goal="Write clearly"),
 ])
 print(crew.run_sequential("Explain PowerChain"))
 ```
@@ -69,41 +69,25 @@ rag = RAGChain(llm=ChatOpenAI(), retriever=store.as_retriever())
 print(rag.invoke("What is PowerChain?"))
 ```
 
-## Project Structure
-
-```
-powerchain/
-├── core/
-│   ├── models/
-│   ├── tools/
-│   ├── agents/
-│   ├── memory/          # Conversation, Summary, Vector
-│   ├── prompts/
-│   ├── runnables/
-│   └── tracing/
-├── rag/
-├── multiagent/         # AgentNode, Crew, Graph
-└── examples/
-```
-
-## Roadmap
-
-- [x] Core
-- [x] RAG foundation
-- [x] Multi-agent & Graph
-- [x] Better memory (Summary + Vector)
-- [ ] Reliability (retries, fallbacks, better streaming)
-- [ ] More loaders & vector backends
-- [ ] Evaluation harness
-- [ ] Additional LLM providers
-
 ## Install
 
 ```bash
 git clone https://github.com/Stanley03-arch/powerchain.git
 cd powerchain
 pip install -e ".[openai]"
+export OPENAI_API_KEY=sk-...
 ```
+
+## Roadmap
+
+- [x] Core
+- [x] RAG
+- [x] Multi-agent + Graph
+- [x] Advanced Memory
+- [x] Reliability (retries, fallbacks, streaming)
+- [ ] More document loaders & vector store backends
+- [ ] Evaluation harness
+- [ ] Additional LLM providers
 
 ## License
 

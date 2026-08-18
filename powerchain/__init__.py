@@ -4,6 +4,8 @@ PowerChain — A cleaner, more powerful alternative to LangChain.
 
 from powerchain.core.models.base import BaseChatModel, ChatMessage, Role
 from powerchain.core.models.openai import ChatOpenAI
+from powerchain.core.models.retry import RetryChatModel
+from powerchain.core.models.fallback import FallbackChatModel
 from powerchain.core.tools.base import tool, Tool, BaseTool
 from powerchain.core.agents.agent import Agent
 from powerchain.core.memory.conversation import ConversationMemory
@@ -26,7 +28,7 @@ from powerchain.multiagent.agent_node import AgentNode
 from powerchain.multiagent.crew import Crew
 from powerchain.multiagent.graph import Graph, Node, Edge
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     # Core
@@ -34,6 +36,8 @@ __all__ = [
     "ChatMessage",
     "Role",
     "ChatOpenAI",
+    "RetryChatModel",
+    "FallbackChatModel",
     "tool",
     "Tool",
     "BaseTool",
