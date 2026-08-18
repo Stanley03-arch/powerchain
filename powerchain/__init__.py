@@ -6,6 +6,9 @@ from powerchain.core.models.base import BaseChatModel, ChatMessage, Role
 from powerchain.core.models.openai import ChatOpenAI
 from powerchain.core.models.retry import RetryChatModel
 from powerchain.core.models.fallback import FallbackChatModel
+from powerchain.core.models.anthropic import ChatAnthropic
+from powerchain.core.models.groq import ChatGroq
+from powerchain.core.models.ollama import ChatOllama
 from powerchain.core.tools.base import tool, Tool, BaseTool
 from powerchain.core.agents.agent import Agent
 from powerchain.core.memory.conversation import ConversationMemory
@@ -34,14 +37,17 @@ from powerchain.multiagent.graph import Graph, Node, Edge
 from powerchain.eval.evaluator import Evaluator, EvalResult
 from powerchain.eval.qa_eval import QAEvaluator
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 __all__ = [
-    # Core
+    # Core / Models
     "BaseChatModel",
     "ChatMessage",
     "Role",
     "ChatOpenAI",
+    "ChatAnthropic",
+    "ChatGroq",
+    "ChatOllama",
     "RetryChatModel",
     "FallbackChatModel",
     "tool",
