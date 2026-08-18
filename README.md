@@ -4,7 +4,7 @@
 
 PowerChain is designed from the ground up to fix the main pain points of LangChain while delivering stronger agent capabilities, better composition, first-class streaming readiness, and excellent observability.
 
-> Status: **v0.2** — Core + RAG foundation complete.
+> Status: **v0.3** — Core + RAG + Multi-Agent & Graph orchestration.
 
 ## Why PowerChain?
 
@@ -12,17 +12,17 @@ PowerChain is designed from the ground up to fix the main pain points of LangCha
 |-------------------|-----------------------------------|----------------------------------------------|
 | Composition       | LCEL can feel heavy / magical     | Explicit, typed, easy-to-debug Runnables     |
 | Agents            | Often brittle                     | First-class agent loop + planning + reflection |
-| Tools             | Schema + execution mixed          | Clean schema + robust execution + retries    |
-| Memory            | Many overlapping classes          | Simple hierarchical memory from day one      |
+| Tools             | Schema + execution mixed          | Clean schema + robust execution              |
+| Memory            | Many overlapping classes          | Simple hierarchical memory                   |
 | Observability     | Bolted on                         | Built-in tracing & callbacks                 |
 | Typing            | Inconsistent                      | Strong Pydantic + modern type hints          |
-| Streaming         | Uneven support                    | First-class everywhere                       |
-| RAG               | Complex setup                     | Clean, modular, easy to extend               |
+| RAG               | Complex setup                     | Clean, modular pipeline                      |
+| Multi-agent       | Fragmented (LangGraph, CrewAI…)   | Native Crew + lightweight Graph              |
 
 ## Features
 
 ### v0.1 — Core
-- Unified LLM / ChatModel interface (streaming + tool calling ready)
+- Unified LLM / ChatModel interface
 - Strong typed Tool system + `@tool` decorator
 - Modern Agent loop
 - Conversation Memory
@@ -30,14 +30,17 @@ PowerChain is designed from the ground up to fix the main pain points of LangCha
 - Runnable composition (`|` style)
 - Tracing / callback hooks
 
-### v0.2 — RAG (just added)
-- `Document` model
-- Text loaders
-- Recursive character text splitter
-- Embeddings interface + OpenAI embeddings
-- In-memory vector store (cosine similarity)
-- Vector store retriever
-- Simple + effective `RAGChain`
+### v0.2 — RAG
+- Document model, TextLoader
+- RecursiveCharacterTextSplitter
+- OpenAIEmbeddings
+- InMemoryVectorStore + Retriever
+- RAGChain
+
+### v0.3 — Multi-Agent (just added)
+- `AgentNode` — named agents with role & goal
+- `Crew` — sequential & round-robin multi-agent execution
+- `Graph` — lightweight graph-based orchestration (LangGraph-style but simpler)
 
 ## Quick Start
 
@@ -45,72 +48,62 @@ PowerChain is designed from the ground up to fix the main pain points of LangCha
 git clone https://github.com/Stanley03-arch/powerchain.git
 cd powerchain
 pip install -e ".[openai]"
+export OPENAI_API_KEY=sk-...
 ```
 
-### Agent example
-
+### Single Agent
 ```python
-from powerchain import ChatOpenAI, tool, Agent, ConversationMemory
+from powerchain import ChatOpenAI, tool, Agent
 
 @tool
 def get_weather(city: str) -> str:
-    """Get current weather for a city."""
-    return f"Sunny and 24°C in {city}"
+    return f"Sunny in {city}"
 
-llm = ChatOpenAI(model="gpt-4o-mini")
-agent = Agent(llm=llm, tools=[get_weather], memory=ConversationMemory())
-
-print(agent.run("What's the weather in Nairobi?"))
+agent = Agent(llm=ChatOpenAI(), tools=[get_weather])
+print(agent.run("Weather in Nairobi?"))
 ```
 
-### RAG example
-
+### Multi-Agent Crew
 ```python
-from powerchain import (
-    ChatOpenAI, Document, RecursiveCharacterTextSplitter,
-    OpenAIEmbeddings, InMemoryVectorStore, RAGChain
-)
+from powerchain import ChatOpenAI
+from powerchain.multiagent import AgentNode, Crew
 
-docs = [Document(page_content="PowerChain is a modern LLM framework...")]
-splitter = RecursiveCharacterTextSplitter(chunk_size=500)
-chunks = splitter.split_documents(docs)
+llm = ChatOpenAI()
+researcher = AgentNode(name="Researcher", llm=llm, role="Researcher", goal="Find facts")
+writer = AgentNode(name="Writer", llm=llm, role="Writer", goal="Write clearly")
 
-embeddings = OpenAIEmbeddings()
-store = InMemoryVectorStore(embedding=embeddings)
-store.add_documents(chunks)
+crew = Crew(agents=[researcher, writer])
+print(crew.run_sequential("Explain quantum computing simply"))
+```
 
-rag = RAGChain(llm=ChatOpenAI(), retriever=store.as_retriever())
-print(rag.invoke("What is PowerChain?"))
+### Graph Orchestration
+```python
+from powerchain.multiagent import Graph
+
+graph = Graph()
+graph.add_node("plan", lambda s: {"plan": "..."})
+graph.add_node("execute", lambda s: {"result": "done"})
+graph.set_entry_point("plan")
+graph.add_edge("plan", "execute")
+
+print(graph.run({"task": "My task"}))
 ```
 
 ## Project Structure
 
 ```
 powerchain/
-├── core/
-│   ├── models/
-│   ├── prompts/
-│   ├── tools/
-│   ├── agents/
-│   ├── memory/
-│   ├── runnables/
-│   └── tracing/
-├── rag/
-│   ├── documents.py
-│   ├── loaders/
-│   ├── splitters/
-│   ├── embeddings/
-│   ├── vectorstores/
-│   ├── retrievers/
-│   └── chain.py
-└── ...
+├── core/           # models, tools, agents, memory, runnables, tracing
+├── rag/            # documents, loaders, splitters, embeddings, vectorstores, retrievers
+├── multiagent/     # AgentNode, Crew, Graph
+└── examples/
 ```
 
 ## Roadmap
 
 - [x] Core (models, tools, agents, memory, composition)
 - [x] RAG foundation
-- [ ] Multi-agent & graph orchestration
+- [x] Multi-agent & graph orchestration
 - [ ] Better memory (summary + vector memory)
 - [ ] More loaders & vector store backends
 - [ ] Streaming polish & reliability (retries, fallbacks)

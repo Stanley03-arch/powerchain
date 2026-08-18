@@ -19,7 +19,12 @@ from powerchain.rag.vectorstores.memory import InMemoryVectorStore
 from powerchain.rag.retrievers.vector import VectorStoreRetriever
 from powerchain.rag.chain import RAGChain
 
-__version__ = "0.2.0"
+# Multi-agent
+from powerchain.multiagent.agent_node import AgentNode
+from powerchain.multiagent.crew import Crew
+from powerchain.multiagent.graph import Graph, Node, Edge
+
+__version__ = "0.3.0"
 
 __all__ = [
     # Core
@@ -44,4 +49,10 @@ __all__ = [
     "InMemoryVectorStore",
     "VectorStoreRetriever",
     "RAGChain",
+    # Multi-agent
+    "AgentNode",
+    "Crew",
+    "Graph",
+    "Node",
+    "Edge",
 ]
