@@ -2,41 +2,40 @@
 
 **A cleaner, more powerful alternative to LangChain.**
 
-> Status: **v0.10** — Structured output parsers added.
+> Status: **v0.11** — Tests + CLI added.
 
-## Structured Output (v0.10)
+## CLI
 
-```python
-from pydantic import BaseModel, Field
-from powerchain import ChatOpenAI, ChatMessage, Role, PydanticOutputParser
+```bash
+pip install -e ".[openai]"
+export OPENAI_API_KEY=sk-...
 
-class MovieReview(BaseModel):
-    title: str
-    rating: float
-    summary: str
-
-parser = PydanticOutputParser(MovieReview)
-prompt = f"Review Inception.\n\n{parser.get_format_instructions()}"
-
-response = ChatOpenAI().invoke([ChatMessage(role=Role.USER, content=prompt)])
-review = parser.parse(response.content)  # -> MovieReview instance
+powerchain version
+powerchain chat
+powerchain chat --model gpt-4o-mini
 ```
 
-Also available: `JsonOutputParser`, `ListOutputParser`.
+## Run Tests
 
-## Complete Feature Set
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+## Feature Overview
 
 | Area | Capabilities |
 |------|--------------|
 | **Models** | OpenAI · Anthropic · Groq · Ollama + Retry/Fallback |
 | **Agents** | Agent · PlanningAgent · ReflectiveAgent |
-| **Tools** | Typed `@tool` decorator |
+| **Tools** | Typed `@tool` |
 | **Memory** | Conversation · Summary · Vector |
 | **Output Parsing** | Pydantic · JSON · List |
-| **RAG** | Loaders · Splitters · FAISS · Chroma · InMemory |
+| **RAG** | Loaders · FAISS · Chroma · InMemory |
 | **Multi-Agent** | Crew · Graph |
 | **Eval** | LLM-as-judge |
-| **Composition** | Runnable pipelines |
+| **CLI** | `powerchain chat` / `version` |
+| **Tests** | Basic unit tests included |
 
 ## Install
 

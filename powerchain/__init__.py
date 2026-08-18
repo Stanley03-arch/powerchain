@@ -48,7 +48,7 @@ from powerchain.multiagent.graph import Graph, Node, Edge
 from powerchain.eval.evaluator import Evaluator, EvalResult
 from powerchain.eval.qa_eval import QAEvaluator
 
-__version__ = "0.10.0"
+__version__ = "0.11.0"
 
 __all__ = [
     # Core / Models
