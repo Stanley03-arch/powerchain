@@ -19,6 +19,12 @@ from powerchain.core.memory.summary import SummaryMemory
 from powerchain.core.memory.vector import VectorMemory
 from powerchain.core.prompts.template import PromptTemplate
 from powerchain.core.runnables.base import Runnable, Sequential, Parallel
+from powerchain.core.output_parsers import (
+    BaseOutputParser,
+    JsonOutputParser,
+    PydanticOutputParser,
+    ListOutputParser,
+)
 
 # RAG
 from powerchain.rag.documents import Document
@@ -42,7 +48,7 @@ from powerchain.multiagent.graph import Graph, Node, Edge
 from powerchain.eval.evaluator import Evaluator, EvalResult
 from powerchain.eval.qa_eval import QAEvaluator
 
-__version__ = "0.9.0"
+__version__ = "0.10.0"
 
 __all__ = [
     # Core / Models
@@ -70,6 +76,11 @@ __all__ = [
     "Runnable",
     "Sequential",
     "Parallel",
+    # Output parsers
+    "BaseOutputParser",
+    "JsonOutputParser",
+    "PydanticOutputParser",
+    "ListOutputParser",
     # RAG
     "Document",
     "TextLoader",

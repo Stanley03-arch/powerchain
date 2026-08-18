@@ -2,36 +2,41 @@
 
 **A cleaner, more powerful alternative to LangChain.**
 
-> Status: **v0.9** — Now with Planning & Reflection agents.
+> Status: **v0.10** — Structured output parsers added.
 
-## Advanced Agents (v0.9)
+## Structured Output (v0.10)
 
 ```python
-from powerchain import ChatOpenAI, PlanningAgent, ReflectiveAgent
+from pydantic import BaseModel, Field
+from powerchain import ChatOpenAI, ChatMessage, Role, PydanticOutputParser
 
-llm = ChatOpenAI()
+class MovieReview(BaseModel):
+    title: str
+    rating: float
+    summary: str
 
-# 1. Planning Agent — breaks task into steps, executes them, synthesizes answer
-planner = PlanningAgent(llm=llm)
-print(planner.run("Complex multi-step task here..."))
+parser = PydanticOutputParser(MovieReview)
+prompt = f"Review Inception.\n\n{parser.get_format_instructions()}"
 
-# 2. Reflective Agent — answers, critiques itself, then improves the answer
-reflective = ReflectiveAgent(llm=llm)
-print(reflective.run("Explain the benefits of PowerChain"))
+response = ChatOpenAI().invoke([ChatMessage(role=Role.USER, content=prompt)])
+review = parser.parse(response.content)  # -> MovieReview instance
 ```
 
-## Full Feature Set
+Also available: `JsonOutputParser`, `ListOutputParser`.
+
+## Complete Feature Set
 
 | Area | Capabilities |
 |------|--------------|
-| **Models** | OpenAI, Anthropic, Groq, Ollama + Retry + Fallback |
-| **Agents** | Basic Agent, PlanningAgent, ReflectiveAgent |
+| **Models** | OpenAI · Anthropic · Groq · Ollama + Retry/Fallback |
+| **Agents** | Agent · PlanningAgent · ReflectiveAgent |
 | **Tools** | Typed `@tool` decorator |
-| **Memory** | Conversation, Summary, Vector |
-| **RAG** | Loaders, Splitters, Embeddings, FAISS, Chroma, InMemory |
-| **Multi-Agent** | Crew + Graph orchestration |
-| **Eval** | LLM-as-judge QAEvaluator |
-| **Composition** | Runnable pipeline (`\|` style) |
+| **Memory** | Conversation · Summary · Vector |
+| **Output Parsing** | Pydantic · JSON · List |
+| **RAG** | Loaders · Splitters · FAISS · Chroma · InMemory |
+| **Multi-Agent** | Crew · Graph |
+| **Eval** | LLM-as-judge |
+| **Composition** | Runnable pipelines |
 
 ## Install
 
