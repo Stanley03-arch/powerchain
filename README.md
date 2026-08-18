@@ -2,43 +2,36 @@
 
 **A cleaner, more powerful alternative to LangChain.**
 
-> Status: **v0.8** — Production-ready foundation with multiple vector stores & LLM providers.
+> Status: **v0.9** — Now with Planning & Reflection agents.
 
-## Vector Stores
-
-| Store | Class | Persistence | Install |
-|-------|------|-------------|--------|
-| In-Memory | `InMemoryVectorStore` | No | Built-in |
-| FAISS | `FAISSVectorStore` | Yes (`save_local` / `load_local`) | `pip install faiss-cpu` |
-| Chroma | `ChromaVectorStore` | Yes | `pip install chromadb` |
+## Advanced Agents (v0.9)
 
 ```python
-from powerchain import OpenAIEmbeddings, FAISSVectorStore, ChromaVectorStore
+from powerchain import ChatOpenAI, PlanningAgent, ReflectiveAgent
 
-embeddings = OpenAIEmbeddings()
+llm = ChatOpenAI()
 
-# FAISS
-faiss_store = FAISSVectorStore(embedding=embeddings)
-faiss_store.add_documents(docs)
-faiss_store.save_local("./my_index")
+# 1. Planning Agent — breaks task into steps, executes them, synthesizes answer
+planner = PlanningAgent(llm=llm)
+print(planner.run("Complex multi-step task here..."))
 
-# Chroma
-chroma_store = ChromaVectorStore(embedding=embeddings, persist_directory="./chroma_db")
+# 2. Reflective Agent — answers, critiques itself, then improves the answer
+reflective = ReflectiveAgent(llm=llm)
+print(reflective.run("Explain the benefits of PowerChain"))
 ```
-
-## LLM Providers
-
-`ChatOpenAI` · `ChatAnthropic` · `ChatGroq` · `ChatOllama`
 
 ## Full Feature Set
 
-- Agents + Tools + Memory (Conversation / Summary / Vector)
-- RAG (Loaders, Splitters, Embeddings, Vector Stores, RAGChain)
-- Multi-Agent Crews + Graph orchestration
-- Retry + Fallback models
-- Streaming
-- Evaluation harness
-- Multiple LLM providers & vector backends
+| Area | Capabilities |
+|------|--------------|
+| **Models** | OpenAI, Anthropic, Groq, Ollama + Retry + Fallback |
+| **Agents** | Basic Agent, PlanningAgent, ReflectiveAgent |
+| **Tools** | Typed `@tool` decorator |
+| **Memory** | Conversation, Summary, Vector |
+| **RAG** | Loaders, Splitters, Embeddings, FAISS, Chroma, InMemory |
+| **Multi-Agent** | Crew + Graph orchestration |
+| **Eval** | LLM-as-judge QAEvaluator |
+| **Composition** | Runnable pipeline (`\|` style) |
 
 ## Install
 
