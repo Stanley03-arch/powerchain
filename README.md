@@ -135,7 +135,7 @@ See the `examples/` folder:
 
 **v0.15.0** — Human-in-the-loop support is production-ready.
 
-The project is under active development. APIs may still evolve slightly.
+See [CHANGELOG.md](CHANGELOG.md) for release history. APIs may still evolve slightly.
 
 ---
 
