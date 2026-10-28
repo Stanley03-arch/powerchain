@@ -46,3 +46,10 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Notebooks / local experiments
+*.ipynb_checkpoints/
+.cache/
+logs/
+*.log
+tmp/
